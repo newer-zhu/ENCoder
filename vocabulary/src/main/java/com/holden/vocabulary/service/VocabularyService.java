@@ -15,8 +15,13 @@ public class VocabularyService {
 
     private final VocabularyRepository vocabularyRepository;
 
-    public Vocabulary save(Vocabulary vocabulary) {
-        return vocabularyRepository.save(vocabulary);
+    public Vocabulary save(Vocabulary incoming) {
+        return vocabularyRepository.findByWord(incoming.getWord())
+                .map(existing -> {
+                    incoming.setId(existing.getId());
+                    return vocabularyRepository.save(incoming);
+                })
+                .orElseGet(() -> vocabularyRepository.save(incoming));
     }
 
 

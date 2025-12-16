@@ -9,12 +9,15 @@ import com.holden.vocabulary.service.VocabularySentenceService;
 import com.holden.vocabulary.service.VocabularyService;
 import com.holden.vocabulary.service.VocabularyTechContextService;
 import com.holden.vocabulary.service.ai.DoubaoAiService;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -26,6 +29,8 @@ public class VocabularyAiEnrichmentJob {
     private final VocabularySentenceService sentenceService;
     private final DoubaoAiService doubaoAiService;
     private final SysDictRepository sysDictRepo;
+    private final EntityManager entityManager;
+
 
     /**
      * 每 10 分钟执行一次：
@@ -44,29 +49,16 @@ public class VocabularyAiEnrichmentJob {
                 .getDictValue();
 
         // 取前 N 个尚未补充 tech context 的词汇（你已有的 service 方法）
-        List<Vocabulary> words = vocabularyService.findWordsWithoutTechContext(0, 50);
-
-        for (Vocabulary vocab : words) {
+        List<Vocabulary> words = vocabularyService.findWordsWithoutTechContext(0, 20);
+        List<String> wordList = words.stream()
+                .map(Vocabulary::getWord)
+                .collect(Collectors.toList());
+        // 调用 AI
+        List<AiVocabularyResult> vocabularyResults = doubaoAiService.enrichBatch(promptTemplate, wordList);
+        for (AiVocabularyResult result : vocabularyResults) {
+            Vocabulary vocab = new Vocabulary();
             try {
-                // 已有例句（>=1）则跳过，后续交给懒加载
-                List<VocabularySentence> existingSentences =
-                        sentenceService.findByVocabulary(vocab);
-                if (!existingSentences.isEmpty()) {
-                    log.debug("词汇 '{}' 已有例句，跳过", vocab.getWord());
-                    continue;
-                }
-
-                // 构建 prompt（核心改动点）
-                String prompt = promptTemplate.replace("{{word}}", vocab.getWord());
-
-                // 调用 AI
-                AiVocabularyResult result = doubaoAiService.enrich(prompt, vocab.getWord());
-
-                if (result == null) {
-                    log.warn("词汇 '{}' AI 返回为空，跳过本轮", vocab.getWord());
-                    continue;
-                }
-
+                vocab.setWord(result.getWord());
                 // 非软件行业 → 软删除
                 if (!result.isSoftwareRelated()) {
                     vocab.setSoftDeleted(true);
@@ -75,11 +67,16 @@ public class VocabularyAiEnrichmentJob {
                     continue;
                 }
 
+                Long vocabId = vocabularyService.findByWord(vocab.getWord()).get().getId();
+                //用 reference，而不是 new Vocabulary()
+                Vocabulary vocabRef =
+                        entityManager.getReference(Vocabulary.class, vocabId);
+
                 // Tech Context（只取一条）
                 if (result.getTechContexts() != null && !result.getTechContexts().isEmpty()) {
                     var tc = result.getTechContexts().get(0);
                     VocabularyTechContext techContext = new VocabularyTechContext(
-                            vocab,
+                            vocabRef,
                             tc.getDomain(),
                             tc.getTechTranslation(),
                             tc.getExplanation()
@@ -91,7 +88,7 @@ public class VocabularyAiEnrichmentJob {
                 if (result.getSentences() != null && !result.getSentences().isEmpty()) {
                     var s = result.getSentences().get(0);
                     VocabularySentence sentence = new VocabularySentence(
-                            vocab,
+                            vocabRef,
                             s.getSentence(),
                             s.getTranslation(),
                             s.getSource()

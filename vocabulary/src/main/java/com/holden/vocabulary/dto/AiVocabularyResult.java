@@ -17,6 +17,7 @@ public class AiVocabularyResult {
     private List<TechContextDTO> techContexts;
 
     private List<SentenceDTO> sentences;
+    private String word;
 
     public boolean isSoftwareRelated() {
         return Boolean.TRUE.equals(softwareRelated);

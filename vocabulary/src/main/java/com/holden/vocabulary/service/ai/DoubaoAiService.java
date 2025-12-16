@@ -1,5 +1,6 @@
 package com.holden.vocabulary.service.ai;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.holden.vocabulary.dto.AiVocabularyResult;
 import com.volcengine.ark.runtime.model.completion.chat.ChatCompletionRequest;
@@ -11,13 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 
-/**
- * @author: Hodor_Zhu
- * @description
- * @date: 2025/12/14 17:58
- */
 @Slf4j
 @Service
 public class DoubaoAiService {
@@ -49,11 +46,20 @@ public class DoubaoAiService {
         log.info("DoubaoAiService initialized, model={}", model);
     }
 
-    public AiVocabularyResult enrich(String prompt, String word) {
+    /**
+     * 批量 enrich（推荐使用）
+     */
+    public List<AiVocabularyResult> enrichBatch(String prompt, List<String> wordList) {
+        if (wordList == null || wordList.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        String finalPrompt = buildPrompt(prompt, wordList);
+
         List<ChatMessage> messages = List.of(
                 ChatMessage.builder()
                         .role(ChatMessageRole.USER)
-                        .content(prompt)
+                        .content(finalPrompt)
                         .build()
         );
 
@@ -66,37 +72,56 @@ public class DoubaoAiService {
                 .getChoices()
                 .get(0)
                 .getMessage()
-                .getContent().toString();
+                .getContent()
+                .toString();
 
-        return parseSafely(rawContent, word);
+        return parseBatchSafely(rawContent, wordList);
     }
 
     /**
-     * 容错 JSON 解析
+     * 构建最终 prompt（prompt + wordList）
      */
-    private AiVocabularyResult parseSafely(String content, String word) {
+    private String buildPrompt(String prompt, List<String> wordList) {
         try {
-            String json = extractJson(content);
-            return objectMapper.readValue(json, AiVocabularyResult.class);
+            String wordsJson = objectMapper.writeValueAsString(wordList);
+            return prompt + "\n\n" + wordsJson;
         } catch (Exception e) {
-            log.error("AI JSON 解析失败, word={}, content={}", word, content);
-            // 解析失败，视为非软件词，避免反复调用
-            AiVocabularyResult fallback = new AiVocabularyResult();
-            fallback.setSoftwareRelated(false);
-            return fallback;
+            throw new IllegalStateException("构建 wordList JSON 失败", e);
         }
     }
 
     /**
-     * 从 AI 输出中提取 JSON（防止出现多余文本）
+     * 容错解析 JSON 数组
      */
-    private String extractJson(String text) {
-        int start = text.indexOf("{");
-        int end = text.lastIndexOf("}");
+    private List<AiVocabularyResult> parseBatchSafely(String content, List<String> wordList) {
+        try {
+            String jsonArray = extractJsonArray(content);
+            return objectMapper.readValue(
+                    jsonArray,
+                    new TypeReference<List<AiVocabularyResult>>() {}
+            );
+        } catch (Exception e) {
+            log.error("AI JSON 数组解析失败, words={}, content={}", wordList, content);
+
+            // 兜底：全部视为非软件词，避免重试风暴
+            return wordList.stream().map(w -> {
+                AiVocabularyResult r = new AiVocabularyResult();
+                r.setWord(w);
+                r.setSoftwareRelated(false);
+                return r;
+            }).toList();
+        }
+    }
+
+    /**
+     * 从 AI 输出中提取 JSON 数组
+     */
+    private String extractJsonArray(String text) {
+        int start = text.indexOf("[");
+        int end = text.lastIndexOf("]");
         if (start == -1 || end == -1 || start >= end) {
-            throw new IllegalArgumentException("未找到合法 JSON");
+            throw new IllegalArgumentException("未找到合法 JSON 数组");
         }
         return text.substring(start, end + 1);
     }
 }
-
