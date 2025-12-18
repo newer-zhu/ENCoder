@@ -7,7 +7,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @EnableConfigurationProperties
 @SpringBootApplication
-//@EnableScheduling
+@EnableScheduling
 public class VocabularyApplication {
 
     public static void main(String[] args) {

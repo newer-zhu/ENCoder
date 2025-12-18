@@ -1,5 +1,6 @@
 package com.holden.vocabulary.job;
 
+import com.holden.vocabulary.common.AiConversationContext;
 import com.holden.vocabulary.dto.AiVocabularyResult;
 import com.holden.vocabulary.entity.Vocabulary;
 import com.holden.vocabulary.entity.VocabularySentence;
@@ -31,6 +32,8 @@ public class VocabularyAiEnrichmentJob {
     private final SysDictRepository sysDictRepo;
     private final EntityManager entityManager;
 
+    private AiConversationContext ctx = new AiConversationContext();
+
 
     /**
      * 每 10 分钟执行一次：
@@ -54,7 +57,7 @@ public class VocabularyAiEnrichmentJob {
                 .map(Vocabulary::getWord)
                 .collect(Collectors.toList());
         // 调用 AI
-        List<AiVocabularyResult> vocabularyResults = doubaoAiService.enrichBatch(promptTemplate, wordList);
+        List<AiVocabularyResult> vocabularyResults = doubaoAiService.enrichBatch(ctx, promptTemplate, wordList);
         for (AiVocabularyResult result : vocabularyResults) {
             Vocabulary vocab = new Vocabulary();
             try {

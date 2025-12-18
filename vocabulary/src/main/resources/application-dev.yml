@@ -1,0 +1,24 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: vocabulary
+  datasource:
+    url: jdbc:postgresql://192.168.199.139:5432/dev
+    username: postgres
+    password: 20001030
+    driver-class-name: org.postgresql.Driver
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+
+ark:
+  api-key: 6d37808f-aa24-4e29-96c4-e783d24ac873
+  base-url: https://ark.cn-beijing.volces.com/api/v3/
+  model: deepseek-v3-2-251201

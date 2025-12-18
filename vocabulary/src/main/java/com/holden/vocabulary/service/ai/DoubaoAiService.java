@@ -2,10 +2,24 @@ package com.holden.vocabulary.service.ai;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.holden.vocabulary.common.AiConversationContext;
 import com.holden.vocabulary.dto.AiVocabularyResult;
 import com.volcengine.ark.runtime.model.completion.chat.ChatCompletionRequest;
 import com.volcengine.ark.runtime.model.completion.chat.ChatMessage;
 import com.volcengine.ark.runtime.model.completion.chat.ChatMessageRole;
+import com.volcengine.ark.runtime.model.responses.common.ResponsesText;
+import com.volcengine.ark.runtime.model.responses.common.ResponsesTextFormat;
+import com.volcengine.ark.runtime.model.responses.constant.ResponsesConstants;
+import com.volcengine.ark.runtime.model.responses.content.OutputContentItemText;
+import com.volcengine.ark.runtime.model.responses.item.ItemEasyMessage;
+import com.volcengine.ark.runtime.model.responses.item.ItemOutputMessage;
+import com.volcengine.ark.runtime.model.responses.item.MessageContent;
+import com.volcengine.ark.runtime.model.responses.item.OutputItem;
+import com.volcengine.ark.runtime.model.responses.request.CreateResponsesRequest;
+import com.volcengine.ark.runtime.model.responses.request.ResponsesInput;
+import com.volcengine.ark.runtime.model.responses.response.ResponseObject;
 import com.volcengine.ark.runtime.service.ArkService;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +46,7 @@ public class DoubaoAiService {
 
     private ArkService arkService;
 
+
     @PostConstruct
     public void init() {
         if (apiKey == null || apiKey.isBlank()) {
@@ -49,43 +64,50 @@ public class DoubaoAiService {
     /**
      * 批量 enrich（推荐使用）
      */
-    public List<AiVocabularyResult> enrichBatch(String prompt, List<String> wordList) {
+    public synchronized List<AiVocabularyResult> enrichBatch(AiConversationContext context,
+                                                             String prompt, List<String> wordList) {
         if (wordList == null || wordList.isEmpty()) {
             return Collections.emptyList();
         }
 
-        String finalPrompt = buildPrompt(prompt, wordList);
+        String finalPrompt = buildFirstPrompt(prompt, wordList);
+        ResponseObject response = null;
+        String res = "";
+        if(context.getLastResponseId() == null){//第一次调用模型
+            CreateResponsesRequest request = CreateResponsesRequest.builder()
+                    .model(model)
+                    .input(ResponsesInput.builder().stringValue(finalPrompt).build())
+                    .build();
+            response = arkService.createResponse(request);
+            context.setLastResponseId("1");
+        }else {
+            // Create the second-round conversation request
+            CreateResponsesRequest request2 = CreateResponsesRequest.builder()
+                    .model(model)
+                    .previousResponseId(context.getLastResponseId())
+                    .input(ResponsesInput.builder().addListItem(
+                            ItemEasyMessage.builder().role(ResponsesConstants.MESSAGE_ROLE_USER).content(
+                                    MessageContent.builder().stringValue(new Gson().toJson(wordList)).build()
+                            ).build()
+                    ).build())
+                    .build();
+            response = arkService.createResponse(request2);
+        }
+        context.setLastResponseId(response.getPreviousResponseId());
+        res = ((OutputContentItemText)((ItemOutputMessage)response.getOutput().get(0)).getContent().get(0)).getText();
 
-        List<ChatMessage> messages = List.of(
-                ChatMessage.builder()
-                        .role(ChatMessageRole.USER)
-                        .content(finalPrompt)
-                        .build()
-        );
-
-        ChatCompletionRequest request = ChatCompletionRequest.builder()
-                .model(model)
-                .messages(messages)
-                .build();
-
-        String rawContent = arkService.createChatCompletion(request)
-                .getChoices()
-                .get(0)
-                .getMessage()
-                .getContent()
-                .toString();
-
-        return parseBatchSafely(rawContent, wordList);
+        return parseBatchSafely(res, wordList);
     }
 
     /**
      * 构建最终 prompt（prompt + wordList）
      */
-    private String buildPrompt(String prompt, List<String> wordList) {
+    private String buildFirstPrompt(String prompt, List<String> wordList) {
         try {
             String wordsJson = objectMapper.writeValueAsString(wordList);
             return prompt + "\n\n" + wordsJson;
         } catch (Exception e) {
+            arkService.shutdownExecutor();
             throw new IllegalStateException("构建 wordList JSON 失败", e);
         }
     }
