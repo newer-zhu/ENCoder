@@ -5,7 +5,7 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-  - task: Checkout@1
+  - checkout: self
 
   - task: Maven@4
     inputs:
