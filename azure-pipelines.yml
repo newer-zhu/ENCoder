@@ -1,0 +1,16 @@
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+  - checkout: self
+
+  - task: Maven@4
+    inputs:
+      mavenPomFile: 'pom.xml'
+      goals: 'clean package'
+      options: '-DskipTests'
+      javaHomeOption: 'JDKVersion'
+      jdkVersionOption: '17'
