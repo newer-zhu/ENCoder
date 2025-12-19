@@ -1,6 +1,7 @@
 package com.holden.vocabulary.repository;
 
-import com.holden.vocabulary.entity.Vocabulary;
+
+import com.holden.common.entity.Vocabulary;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

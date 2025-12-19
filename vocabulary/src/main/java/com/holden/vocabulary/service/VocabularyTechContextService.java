@@ -1,7 +1,7 @@
 package com.holden.vocabulary.service;
 
-import com.holden.vocabulary.entity.Vocabulary;
-import com.holden.vocabulary.entity.VocabularyTechContext;
+import com.holden.common.entity.Vocabulary;
+import com.holden.common.entity.VocabularyTechContext;
 import com.holden.vocabulary.repository.VocabularyTechContextRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

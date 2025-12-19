@@ -1,7 +1,8 @@
 package com.holden.vocabulary.repository;
 
-import com.holden.vocabulary.entity.Vocabulary;
-import com.holden.vocabulary.entity.VocabularyTechContext;
+
+import com.holden.common.entity.Vocabulary;
+import com.holden.common.entity.VocabularyTechContext;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

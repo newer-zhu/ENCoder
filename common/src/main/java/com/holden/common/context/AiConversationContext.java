@@ -1,4 +1,4 @@
-package com.holden.vocabulary.common;
+package com.holden.common.context;
 
 import lombok.Data;
 

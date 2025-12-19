@@ -13,6 +13,8 @@
 
     <modules>
         <module>vocabulary</module>
+        <module>ai-service</module>
+        <module>common</module>
     </modules>
 
     <properties>

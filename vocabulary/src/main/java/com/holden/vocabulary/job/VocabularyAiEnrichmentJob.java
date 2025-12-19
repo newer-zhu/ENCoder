@@ -1,19 +1,20 @@
 package com.holden.vocabulary.job;
 
-import com.holden.vocabulary.common.AiConversationContext;
-import com.holden.vocabulary.dto.AiVocabularyResult;
-import com.holden.vocabulary.entity.Vocabulary;
-import com.holden.vocabulary.entity.VocabularySentence;
-import com.holden.vocabulary.entity.VocabularyTechContext;
+import com.holden.common.context.AiConversationContext;
+import com.holden.common.dto.AiVocabularyEnrichRequest;
+import com.holden.common.dto.AiVocabularyResult;
+import com.holden.common.entity.Vocabulary;
+import com.holden.common.entity.VocabularySentence;
+import com.holden.common.entity.VocabularyTechContext;
+import com.holden.vocabulary.feign.AiFeignClient;
 import com.holden.vocabulary.repository.SysDictRepository;
 import com.holden.vocabulary.service.VocabularySentenceService;
 import com.holden.vocabulary.service.VocabularyService;
 import com.holden.vocabulary.service.VocabularyTechContextService;
-import com.holden.vocabulary.service.ai.DoubaoAiService;
 import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -28,7 +29,7 @@ public class VocabularyAiEnrichmentJob {
     private final VocabularyService vocabularyService;
     private final VocabularyTechContextService techContextService;
     private final VocabularySentenceService sentenceService;
-    private final DoubaoAiService doubaoAiService;
+    private final AiFeignClient doubaoAiService;
     private final SysDictRepository sysDictRepo;
     private final EntityManager entityManager;
 
@@ -40,11 +41,12 @@ public class VocabularyAiEnrichmentJob {
      * - 为程序员词汇补充【软件行业解释 + 例句】
      * - 非软件行业词汇直接软删除
      */
-    @Scheduled(cron = "0 */10 * * * ?")
+    @Scheduled(cron = "0 */5 * * * ?")
     public void enrichVocabulary() {
         doJob();
     }
 
+    @Transactional
     public void doJob(){
         String promptTemplate = sysDictRepo
                 .findByDictTypeAndDictKey("AI_PROMPT", "VOCAB_TECH_PROMPT")
@@ -57,7 +59,9 @@ public class VocabularyAiEnrichmentJob {
                 .map(Vocabulary::getWord)
                 .collect(Collectors.toList());
         // 调用 AI
-        List<AiVocabularyResult> vocabularyResults = doubaoAiService.enrichBatch(ctx, promptTemplate, wordList);
+        List<AiVocabularyResult> vocabularyResults = doubaoAiService.enrich(
+                new AiVocabularyEnrichRequest(promptTemplate, wordList, ctx));
+
         for (AiVocabularyResult result : vocabularyResults) {
             Vocabulary vocab = new Vocabulary();
             try {

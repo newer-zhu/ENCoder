@@ -1,6 +1,6 @@
 package com.holden.vocabulary.controller;
 
-import com.holden.vocabulary.entity.Vocabulary;
+import com.holden.common.entity.Vocabulary;
 import com.holden.vocabulary.service.VocabularyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

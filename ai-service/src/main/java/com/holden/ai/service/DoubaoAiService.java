@@ -1,22 +1,15 @@
-package com.holden.vocabulary.service.ai;
+package com.holden.ai.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.holden.vocabulary.common.AiConversationContext;
-import com.holden.vocabulary.dto.AiVocabularyResult;
-import com.volcengine.ark.runtime.model.completion.chat.ChatCompletionRequest;
-import com.volcengine.ark.runtime.model.completion.chat.ChatMessage;
-import com.volcengine.ark.runtime.model.completion.chat.ChatMessageRole;
-import com.volcengine.ark.runtime.model.responses.common.ResponsesText;
-import com.volcengine.ark.runtime.model.responses.common.ResponsesTextFormat;
+import com.holden.common.context.AiConversationContext;
+import com.holden.common.dto.AiVocabularyResult;
 import com.volcengine.ark.runtime.model.responses.constant.ResponsesConstants;
 import com.volcengine.ark.runtime.model.responses.content.OutputContentItemText;
 import com.volcengine.ark.runtime.model.responses.item.ItemEasyMessage;
 import com.volcengine.ark.runtime.model.responses.item.ItemOutputMessage;
 import com.volcengine.ark.runtime.model.responses.item.MessageContent;
-import com.volcengine.ark.runtime.model.responses.item.OutputItem;
 import com.volcengine.ark.runtime.model.responses.request.CreateResponsesRequest;
 import com.volcengine.ark.runtime.model.responses.request.ResponsesInput;
 import com.volcengine.ark.runtime.model.responses.response.ResponseObject;

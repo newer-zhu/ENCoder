@@ -1,6 +1,7 @@
 package com.holden.vocabulary.repository;
 
-import com.holden.vocabulary.entity.SysDict;
+
+import com.holden.common.entity.SysDict;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

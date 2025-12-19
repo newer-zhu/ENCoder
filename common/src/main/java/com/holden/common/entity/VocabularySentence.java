@@ -1,4 +1,4 @@
-package com.holden.vocabulary.entity;
+package com.holden.common.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;

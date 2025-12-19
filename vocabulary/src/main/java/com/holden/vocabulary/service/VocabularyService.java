@@ -1,6 +1,7 @@
 package com.holden.vocabulary.service;
 
-import com.holden.vocabulary.entity.Vocabulary;
+
+import com.holden.common.entity.Vocabulary;
 import com.holden.vocabulary.repository.VocabularyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;

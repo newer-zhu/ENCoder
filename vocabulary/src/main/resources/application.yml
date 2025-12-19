@@ -7,7 +7,7 @@ spring:
   datasource:
     url:
     username: postgres
-    password:
+    password: ${DB_PWD}
     driver-class-name: org.postgresql.Driver
 
 mybatis-plus:
