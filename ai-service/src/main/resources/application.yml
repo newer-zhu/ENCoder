@@ -10,7 +10,3 @@ ark:
   base-url: https://ark.cn-beijing.volces.com/api/v3/
   model: deepseek-v3-2-251201
 
-ai:
-  service:
-    url: http://localhost:8081
-

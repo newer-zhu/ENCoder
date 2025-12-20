@@ -6,14 +6,25 @@ spring:
     name: vocabulary
   datasource:
     url:
-    username: postgres
+    username: ${DB_USER}
     password: ${DB_PWD}
     driver-class-name: org.postgresql.Driver
+  cloud:
+    openfeign:
+      okhttp:
+        enabled: true
 
-mybatis-plus:
-  configuration:
-    map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-  global-config:
-    db-config:
-      id-type: auto
+feign:
+  client:
+    config:
+      ai-service:
+        connectTimeout: 5000
+        readTimeout: 120000
+        retryer: feign.Retryer$NeverRetry
+        loggerLevel: BASIC
+  httpclient:
+    enabled: false
+  okhttp:
+    enabled: true
+
+
