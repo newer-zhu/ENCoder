@@ -12,7 +12,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>vocabulary</module>
+        <module>vocabulary-service</module>
         <module>ai-service</module>
         <module>common</module>
     </modules>
