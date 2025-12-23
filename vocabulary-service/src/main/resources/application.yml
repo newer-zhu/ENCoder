@@ -1,0 +1,54 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: vocabulary
+  datasource:
+    url:
+    username: ${DB_USER}
+    password: ${DB_PWD}
+    driver-class-name: org.postgresql.Driver
+  cloud:
+    openfeign:
+      okhttp:
+        enabled: true
+
+feign:
+  client:
+    config:
+      ai-service:
+        connectTimeout: 5000
+        readTimeout: 120000
+        retryer: feign.Retryer$NeverRetry
+        loggerLevel: BASIC
+  httpclient:
+    enabled: false
+  okhttp:
+    enabled: true
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      aiService:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 60s
+        permittedNumberOfCallsInHalfOpenState: 2
+        minimumNumberOfCalls: 5
+  timelimiter:
+    instances:
+      aiService:
+        timeoutDuration: 120s
+        cancelRunningFuture: true
+  bulkhead:
+    instances:
+      aiService:
+        maxConcurrentCalls: 3
+        maxWaitDuration: 0
+
+ai:
+  service:
+    url: http://localhost:8081
+
