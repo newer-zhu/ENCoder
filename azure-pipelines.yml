@@ -22,5 +22,6 @@ steps:
 
   - task: PublishPipelineArtifact@1
     inputs:
-      targetPath: '$(Build.SourcesDirectory)/target'
-      artifact: 'jar'
+      targetPath: '$(Build.SourcesDirectory)/**/target'
+      artifact: 'all-jars'
+
