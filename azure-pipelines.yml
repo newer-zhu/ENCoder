@@ -15,6 +15,11 @@ steps:
       javaHomeOption: 'JDKVersion'
       jdkVersionOption: '17'
 
+  - script: |
+      echo "目录结构:"
+      ls -R $(Build.SourcesDirectory)
+    displayName: 'Print directory tree'
+
   - task: PublishPipelineArtifact@1
     inputs:
       targetPath: '$(Build.SourcesDirectory)/target'
