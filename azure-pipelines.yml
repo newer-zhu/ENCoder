@@ -16,12 +16,15 @@ steps:
       jdkVersionOption: '17'
 
   - script: |
-      echo "目录结构:"
-      ls -R $(Build.SourcesDirectory)
-    displayName: 'Print directory tree'
+      echo "收集各模块 jar 到 ArtifactStagingDirectory"
+      mkdir -p $(Build.ArtifactStagingDirectory)
+      cp $(Build.SourcesDirectory)/vocabulary-service/target/*.jar $(Build.ArtifactStagingDirectory)/
+      cp $(Build.SourcesDirectory)/ai-service/target/*.jar $(Build.ArtifactStagingDirectory)/
+      cp $(Build.SourcesDirectory)/common/target/*.jar $(Build.ArtifactStagingDirectory)/
+    displayName: 'Collect all module jars'
 
   - task: PublishPipelineArtifact@1
     inputs:
-      targetPath: '$(Build.SourcesDirectory)/**/target'
-      artifact: 'all-jars'
+      targetPath: '$(Build.ArtifactStagingDirectory)'
+      artifact: 'all-modules-jars'
 
