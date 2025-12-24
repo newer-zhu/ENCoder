@@ -14,3 +14,8 @@ steps:
       options: '-DskipTests'
       javaHomeOption: 'JDKVersion'
       jdkVersionOption: '17'
+
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: '$(Build.SourcesDirectory)/target'
+      artifact: 'jar'
